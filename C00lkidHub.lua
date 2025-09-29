@@ -1,168 +1,148 @@
---// C00lkidHub.lua
--- Made by enz0 (Pro_99nightsforest)
+-- C00lkidHub.lua
+-- Made for Pro_99nightsforest (enz0) 😎
 
---// Services
+-- // SERVICES
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
---// Rayfield Loader
+-- // KEYS
+local Keys = {
+    Public = "Yourkeyis123",
+    Special = "WelcomeSpecialperson",
+    Owner = "Pro_99nightsforest",
+    Locked = "Force chat"
+}
+
+-- // WRONG KEY SYSTEM
+local attempts = 0
+local maxAttempts = 3
+local lockTime = 300 -- 5 mins
+local lockedUntil = 0
+
+-- // HELPER FUNCTION
+local function funnyWrong()
+    local phrases = {
+        "LOL wrong key 😂",
+        "Bruh... try harder 😜",
+        "Wrong key, noob!",
+        "Haha not today 🤣",
+        "Skill issue with keys 😏"
+    }
+    return phrases[math.random(1, #phrases)]
+end
+
+-- // LOAD RAYFIELD
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
---// Key System Config
-local OwnerKey = "Freekeybyowner"
-local SpecialKey = "WelcomeSpecialperson"
-local PublicKey = "Public key"
-local OtherKey = "Yourkeyis123"
-
-local WrongAttempts = 0
-local MaxWrong = 5
-local AccessLevel = nil
-
---// Helper: Funny Rejects
-local FunnyRejects = {
-    "LOL nope 💀",
-    "Bro really tried 💀",
-    "❌ Wrong key, goofy",
-    "😂 Not even close",
-    "🚪 Door is locked fam",
-    "Skill issue 💀",
-    "Bruh moment 🤡"
-}
-local function FunnyReject()
-    return FunnyRejects[math.random(1, #FunnyRejects)]
-end
-
---// Helper: Kick Player with funny message
-local KickMessages = {
-    "💀 TOO MANY WRONG KEYS!! GET OUT 🚪💨",
-    "🤣 You got cooked, kicked for spam",
-    "😂 Game over, no entry for clowns",
-    "❌ Instant kick, better luck never"
-}
-local function KickPlayer()
-    LocalPlayer:Kick(KickMessages[math.random(1, #KickMessages)])
-end
-
---// Notifications
-local function Notify(title, content, time)
-    Rayfield:Notify({
-        Title = title,
-        Content = content,
-        Duration = time or 6,
-        Image = 4483362458
-    })
-end
-
---// GUI
 local Window = Rayfield:CreateWindow({
-    Name = 'C00lkid "made by enz0"',
-    LoadingTitle = "C00lkidHub",
-    LoadingSubtitle = "by enz0",
-    ConfigurationSaving = {
-        Enabled = false,
-    },
-    Discord = {
-        Enabled = false,
-    },
+    Name = "😺 C00lKid Hub 😺",
+    LoadingTitle = "Welcome to C00lkidHub",
+    LoadingSubtitle = "Made by enz0",
+    ConfigurationSaving = { Enabled = false },
+    Discord = { Enabled = false },
     KeySystem = true,
     KeySettings = {
-        Title = "C00lkidHub Key System",
-        Subtitle = "Enter the correct key!",
-        Note = "Keys: Owner, Special, Public, or Other",
+        Title = "C00lkidHub",
+        Subtitle = "Enter Key",
+        Note = "Public: " .. Keys.Public .. " | Special: " .. Keys.Special .. " | Owner key is secret 😉",
         FileName = "C00lkidKey",
         SaveKey = false,
         GrabKeyFromSite = false,
-        Key = {OwnerKey, SpecialKey, PublicKey, OtherKey}
+        Key = {Keys.Public, Keys.Special, Keys.Owner, Keys.Locked}
     }
 })
 
---// Key System Logic
-Rayfield:OnKeyEntered(function(Key)
-    if Key == OwnerKey then
-        AccessLevel = "Owner"
-        print("[C00lkidHub] OWNER KEY used by: " .. LocalPlayer.Name)
-        Notify("✅ Owner Access", "Welcome back, enz0!", 8)
-    elseif Key == SpecialKey then
-        AccessLevel = "Special"
-        print("[C00lkidHub] SPECIAL KEY used by: " .. LocalPlayer.Name)
-        Notify("💎 Special Access", "Welcome, special friend!", 8)
-    elseif Key == PublicKey then
-        AccessLevel = "Public"
-        print("[C00lkidHub] PUBLIC KEY used by: " .. LocalPlayer.Name)
-        Notify("🌍 Public Access", "Enjoy the hub!", 8)
-    elseif Key == OtherKey then
-        AccessLevel = "Other"
-        print("[C00lkidHub] OTHER KEY used by: " .. LocalPlayer.Name)
-        Notify("🔑 Access", "Valid universal key!", 8)
+-- // AUTHENTICATION CHECK
+local userRole = "Guest"
+local function checkKey(inputKey)
+    if os.time() < lockedUntil then
+        return false, "⏳ Wait " .. (lockedUntil - os.time()) .. "s before trying again!"
     end
-end)
-
-Rayfield:OnKeyNotFound(function()
-    WrongAttempts = WrongAttempts + 1
-    local left = MaxWrong - WrongAttempts
-
-    Notify("WRONG!", FunnyReject() .. " (" .. WrongAttempts .. "/" .. MaxWrong .. ")", 5)
-    warn("[C00lkidHub] Player " .. LocalPlayer.Name .. " wrong key (" .. WrongAttempts .. "/" .. MaxWrong .. ")")
-
-    if WrongAttempts >= MaxWrong then
-        KickPlayer()
-    elseif left == 1 then
-        Notify("⚠️ Warning!", "Next wrong = instant kick 💀", 6)
+    if inputKey == Keys.Owner then
+        if LocalPlayer.Name == Keys.Owner then
+            userRole = "Owner"
+            return true, "✅ Welcome Owner!"
+        else
+            return false, "🚫 Uh oh, you're NOT the owner!"
+        end
+    elseif inputKey == Keys.Special then
+        Rayfield:Notify("Question!", "What was Enzo's old school?")
+        wait(1)
+        Rayfield:Notify("Hint", "Answer: aliang elementary school")
+        userRole = "Special"
+        return true, "🎉 Welcome Special Person!"
+    elseif inputKey == Keys.Public then
+        userRole = "Public"
+        return true, "👍 Public access granted"
+    elseif inputKey == Keys.Locked then
+        if userRole == "Owner" or userRole == "Special" then
+            return true, "🔓 Access granted to locked tab!"
+        else
+            userRole = "Locked"
+            return true, "🔑 Locked tab access"
+        end
     end
-end)
+    attempts += 1
+    if attempts >= maxAttempts then
+        lockedUntil = os.time() + lockTime
+        attempts = 0
+        return false, "😡 Too many wrong keys! Locked for 5 minutes!"
+    end
+    return false, funnyWrong()
+end
 
---// Tabs
-local PublicTab = Window:CreateTab("Public Scripts 🌍", 4483362458)
-local SpecialTab = Window:CreateTab("Special 💎", 4483362458)
-local OwnerTab = Window:CreateTab("Owner 👑", 4483362458)
-local FunTab = Window:CreateTab("C00lkid Buttons 🤡", 4483362458)
-local PowerTab = Window:CreateTab("Powerful ⚡", 4483362458)
-local AngryTab = Window:CreateTab("Angry 😡", 4483362458)
+-- // TABS
+local publicTab = Window:CreateTab("🌎 Public")
+local specialTab = Window:CreateTab("💖 Special", 4483362458)
+local ownerTab = Window:CreateTab("👑 Owner", 4483362458)
+local lockedTab = Window:CreateTab("🔒 Force Chat", 4483362458)
 
--- Public Tab Example
-PublicTab:CreateButton({
-    Name = "Fly (FE?)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/YOURFLYSCRIPT"))()
-    end,
+-- // PUBLIC TAB CONTENT
+publicTab:CreateButton({
+    Name = "Dance!",
+    Callback = function() LocalPlayer.Character.Humanoid:LoadAnimation(Instance.new("Animation", {AnimationId="rbxassetid://507771019"})):Play() end
 })
 
--- Special Tab Example
-SpecialTab:CreateParagraph({Title = "Special Menu", Content = "Welcome, special friend from aliang elementary school 😼"})
-
--- Owner Tab Example
-OwnerTab:CreateParagraph({Title = "Owner Menu", Content = "Welcome back, Pro_99nightsforest aka enz0!"})
-OwnerTab:CreateButton({
-    Name = "Destroy Hub",
+-- // SPECIAL TAB CONTENT
+specialTab:CreateButton({
+    Name = "Cute Sparkles",
     Callback = function()
-        game:GetService("CoreGui").Rayfield:Destroy()
-    end,
+        local sp = Instance.new("Sparkles", LocalPlayer.Character.Head)
+        sp.Name = "CuteSparkles"
+    end
 })
 
--- Funny Tab
-FunTab:CreateButton({
-    Name = "FE Sound Spam",
+-- // OWNER TAB CONTENT
+ownerTab:CreateButton({
+    Name = "Kick All",
     Callback = function()
-        local sound = Instance.new("Sound", workspace)
-        sound.SoundId = "rbxassetid://6534947240"
-        sound.Looped = true
-        sound:Play()
-    end,
+        for _,plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                plr:Kick("👑 The Owner kicked you!")
+            end
+        end
+    end
 })
 
--- Powerful Tab Example
-PowerTab:CreateButton({
-    Name = "Super Speed",
+-- // LOCKED TAB CONTENT (Force Chat)
+local spam = false
+lockedTab:CreateButton({
+    Name = "Force Chat Random Player: 'Hello Fat'",
     Callback = function()
-        LocalPlayer.Character.Humanoid.WalkSpeed = 100
-    end,
+        local target = Players:GetPlayers()[math.random(1, #Players:GetPlayers())]
+        if target and target ~= LocalPlayer then
+            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("Hello fat", "All")
+        end
+    end
 })
-PowerTab:CreateButton({
-    Name = "Super Jump",
-    Callback = function()
-        LocalPlayer.Character.Humanoid.JumpPower = 200
-    end,
+lockedTab:CreateToggle({
+    Name = "Spam Chat: 'EZ LOL'",
+    CurrentValue = false,
+    Callback = function(Value)
+        spam = Value
+        while spam do
+            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("EZ LOL", "All")
+            wait(1)
+        end
+    end
 })
-
--- Angry Tab
-AngryTab:CreateParagraph({Title = "GRRRR 😡", Content = "This tab is just angry lol"})
