@@ -1,102 +1,132 @@
--- C00lkidHub.lua
--- Loads keys from GitHub JSON file
-
+--// Services
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- Fetch JSON from your GitHub
-local keysUrl = "https://raw.githubusercontent.com/ornaziabella-hub/C00lkidHub/main/keys.json"
-local success, keysData = pcall(function()
-    return game:HttpGet(keysUrl)
-end)
+--// GitHub Keys JSON link
+local KeysURL = "https://raw.githubusercontent.com/ornaziabella-hub/C00lkidHub/main/keys.json"
 
-if not success then
-    warn("⚠️ Failed to load keys.json")
-    return
-end
-
-local keys = HttpService:JSONDecode(keysData)
-
--- Key system variables
-local ownerKey = keys.OwnerKey
-local specialKey = keys.SpecialKey
-local publicKeys = keys.PublicKeys or {}
-local expireDate = keys.ExpireDate
-
--- Date check
-local function isExpired()
-    local today = os.date("!*t") -- UTC date
-    local y, m, d = today.year, today.month, today.day
-    local expYear, expMonth, expDay = string.match(expireDate, "(%d+)-(%d+)-(%d+)")
-    expYear, expMonth, expDay = tonumber(expYear), tonumber(expMonth), tonumber(expDay)
-
-    if (y > expYear) or (y == expYear and m > expMonth) or (y == expYear and m == expMonth and d > expDay) then
-        return true
+--// Fetch Keys Function
+local function fetchKeys()
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(KeysURL))
+    end)
+    if success then
+        return data
+    else
+        warn("❌ Could not fetch keys from GitHub.")
+        return nil
     end
-    return false
 end
 
--- Gui library (Rayfield)
+--// Expire Check
+local function isExpired(expireTime)
+    local now = os.time()
+    local expire = DateTime.fromIsoDate(expireTime):ToUniversalTime().UnixTimestamp
+    return now > expire
+end
+
+--// Check Key Function
+local function checkKey(key, data)
+    -- Owner
+    for _,v in ipairs(data.owner) do
+        if key == v then return "owner" end
+    end
+    -- Special
+    for _,v in ipairs(data.special) do
+        if key == v then return "special" end
+    end
+    -- Daily
+    if not isExpired(data.expires) then
+        for _,v in ipairs(data.daily) do
+            if key == v then return "daily" end
+        end
+    end
+    return nil
+end
+
+--// Rayfield Loader
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Ask for key
-Rayfield:CreateWindow({
-    Name = "🔑 C00lkidHub Key System",
-    LoadingTitle = "C00lkidHub Security",
-    LoadingSubtitle = "Checking your key...",
+--// Load saved key (memory)
+local SavedKey = nil
+pcall(function()
+    local file = isfile and readfile("C00lkidHub_Key.txt")
+    if file then
+        SavedKey = file
+    end
+end)
+
+local function unlockHub(role)
+    -- ✅ Here is where you put your real tabs
+    local MainWindow = Rayfield:CreateWindow({
+        Name = "C00lkid Hub",
+        LoadingTitle = "C00lkid Hub",
+        LoadingSubtitle = "Loaded as "..role,
+        ConfigurationSaving = {
+            Enabled = true,
+            FolderName = "C00lkidHub",
+            FileName = "HubConfig"
+        }
+    })
+
+    if role == "owner" then
+        MainWindow:CreateTab("👑 Owner", 7734068321)
+    end
+    if role == "special" then
+        MainWindow:CreateTab("🌟 Special", 7734068321)
+    end
+    if role == "daily" then
+        MainWindow:CreateTab("🗝️ Daily", 7734068321)
+    end
+
+    MainWindow:CreateTab("😡 Angry", 7734068321)
+    MainWindow:CreateTab("💬 Force Chat", 7734068321)
+end
+
+--// If already saved key, try it
+if SavedKey then
+    local keys = fetchKeys()
+    if keys then
+        local role = checkKey(SavedKey, keys)
+        if role then
+            unlockHub(role)
+            return
+        end
+    end
+end
+
+--// Key Window
+local KeyWindow = Rayfield:CreateWindow({
+    Name = "C00lkid Hub - Key System",
+    LoadingTitle = "C00lkid Hub",
+    LoadingSubtitle = "Enter Your Key",
     ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "C00lkidHub",
-        FileName = "KeyMemory"
+        Enabled = false
     }
 })
 
-local Window = Rayfield:CreateWindow({ Name = "C00lkidHub" })
-
-local function openHub(userType)
-    Rayfield:Notify("✅ Success", "Welcome, "..userType.."!", 5)
-
-    -- Example tabs
-    local mainTab = Window:CreateTab("Main")
-    mainTab:CreateButton({
-        Name = "Fly (FE try)",
-        Callback = function()
-            loadstring(game:HttpGet("https://pastebin.com/raw/YOURFLYSCRIPT"))()
-        end
-    })
-
-    if userType == "Owner" then
-        local ownerTab = Window:CreateTab("Owner Zone")
-        ownerTab:CreateLabel("Only the Owner can see this tab")
-    elseif userType == "Special" then
-        local specialTab = Window:CreateTab("Special Zone")
-        specialTab:CreateLabel("Hi special person! 🎉")
-    end
-end
-
--- Key check
-Rayfield:Prompt({
-    Title = "Enter Key",
-    InputPlaceholder = "Type your key here",
-    Callback = function(inputKey)
-        if isExpired() then
-            Rayfield:Notify("❌ Key Expired", "Please get a new key", 5)
+local KeyTab = KeyWindow:CreateTab("🔑 Key System", 4483362458)
+KeyTab:CreateInput({
+    Name = "Enter Key",
+    PlaceholderText = "Paste key here",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(input)
+        local keys = fetchKeys()
+        if not keys then
+            Rayfield:Notify({ Title = "Error", Content = "Failed to fetch keys!", Duration = 5 })
             return
         end
-
-        if inputKey == ownerKey then
-            openHub("Owner")
-        elseif inputKey == specialKey then
-            openHub("Special")
-        else
-            for _, pubKey in ipairs(publicKeys) do
-                if inputKey == pubKey then
-                    openHub("Public User")
-                    return
+        local role = checkKey(input, keys)
+        if role then
+            Rayfield:Notify({ Title = "Success", Content = "Key accepted! ("..role..")", Duration = 5 })
+            -- Save key
+            pcall(function()
+                if writefile then
+                    writefile("C00lkidHub_Key.txt", input)
                 end
-            end
-            Rayfield:Notify("❌ Wrong Key", "That key doesn’t match", 5)
+            end)
+            unlockHub(role)
+        else
+            Rayfield:Notify({ Title = "Invalid", Content = "Wrong or expired key!", Duration = 5 })
         end
     end
 })
