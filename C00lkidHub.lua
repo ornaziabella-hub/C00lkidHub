@@ -1,132 +1,84 @@
---// Services
-local HttpService = game:GetService("HttpService")
+-- C00lkidHub.lua
+-- Made by enz0 (Pro_99nightsforest)
 
---// GitHub Keys JSON link
-local KeysURL = "https://raw.githubusercontent.com/ornaziabella-hub/C00lkidHub/main/keys.json"
-
---// Fetch Keys Function
-local function fetchKeys()
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(KeysURL))
-    end)
-    if success then
-        return data
-    else
-        warn("❌ Could not fetch keys from GitHub.")
-        return nil
-    end
-end
-
---// Expire Check
-local function isExpired(expireTime)
-    local now = os.time()
-    local expire = DateTime.fromIsoDate(expireTime):ToUniversalTime().UnixTimestamp
-    return now > expire
-end
-
---// Check Key Function
-local function checkKey(key, data)
-    -- Owner
-    for _,v in ipairs(data.owner) do
-        if key == v then return "owner" end
-    end
-    -- Special
-    for _,v in ipairs(data.special) do
-        if key == v then return "special" end
-    end
-    -- Daily
-    if not isExpired(data.expires) then
-        for _,v in ipairs(data.daily) do
-            if key == v then return "daily" end
-        end
-    end
-    return nil
-end
-
---// Rayfield Loader
+-- Load Rayfield
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
---// Load saved key (memory)
-local SavedKey = nil
-pcall(function()
-    local file = isfile and readfile("C00lkidHub_Key.txt")
-    if file then
-        SavedKey = file
-    end
+-- JSON Key URL (always use this!)
+local keyUrl = "https://raw.githubusercontent.com/ornaziabella-hub/C00lkidHub/main/keys.json"
+
+-- Get keys
+local HttpService = game:GetService("HttpService")
+local success, keysData = pcall(function()
+    return HttpService:JSONDecode(game:HttpGet(keyUrl))
 end)
 
-local function unlockHub(role)
-    -- ✅ Here is where you put your real tabs
-    local MainWindow = Rayfield:CreateWindow({
-        Name = "C00lkid Hub",
-        LoadingTitle = "C00lkid Hub",
-        LoadingSubtitle = "Loaded as "..role,
+if not success or not keysData then
+    warn("Failed to load keys.json")
+    return
+end
+
+-- Save key memory
+local function saveKey(key)
+    writefile("C00lkidHub_Key.txt", key)
+end
+
+local function loadSavedKey()
+    if isfile("C00lkidHub_Key.txt") then
+        return readfile("C00lkidHub_Key.txt")
+    end
+end
+
+-- Validate key
+local function isValidKey(input)
+    -- Owner key (forever)
+    if input == keysData.Owner then return "Owner" end
+    -- Special person key (forever)
+    if input == keysData.Special then return "Special" end
+    -- Public key
+    if input == keysData.Public then return "Public" end
+    -- Daily keys
+    for _, dailyKey in ipairs(keysData.Daily or {}) do
+        if input == dailyKey then return "Daily" end
+    end
+    return false
+end
+
+-- Check saved key first
+local savedKey = loadSavedKey()
+local role = savedKey and isValidKey(savedKey)
+
+if not role then
+    -- Key UI
+    Rayfield:CreateWindow({
+        Name = "C00lkidHub - Key System",
+        LoadingTitle = "Welcome to C00lkidHub",
+        LoadingSubtitle = "Made by enz0",
         ConfigurationSaving = {
-            Enabled = true,
-            FolderName = "C00lkidHub",
-            FileName = "HubConfig"
+            Enabled = false
+        },
+        KeySystem = true,
+        KeySettings = {
+            Title = "Enter Your Key",
+            Subtitle = "Get keys from keys.json link",
+            Note = "Owner, Special, Public, or Daily key",
+            FileName = "C00lkidHub_Key",
+            SaveKey = true,
+            GrabKeyFromSite = false,
+            Actions = {
+                [keysData.Owner] = function() saveKey(keysData.Owner) end,
+                [keysData.Special] = function() saveKey(keysData.Special) end,
+                [keysData.Public] = function() saveKey(keysData.Public) end,
+            }
         }
     })
-
-    if role == "owner" then
-        MainWindow:CreateTab("👑 Owner", 7734068321)
-    end
-    if role == "special" then
-        MainWindow:CreateTab("🌟 Special", 7734068321)
-    end
-    if role == "daily" then
-        MainWindow:CreateTab("🗝️ Daily", 7734068321)
-    end
-
-    MainWindow:CreateTab("😡 Angry", 7734068321)
-    MainWindow:CreateTab("💬 Force Chat", 7734068321)
+else
+    -- Already have a valid key
+    print("Welcome back with role:", role)
 end
 
---// If already saved key, try it
-if SavedKey then
-    local keys = fetchKeys()
-    if keys then
-        local role = checkKey(SavedKey, keys)
-        if role then
-            unlockHub(role)
-            return
-        end
-    end
-end
-
---// Key Window
-local KeyWindow = Rayfield:CreateWindow({
-    Name = "C00lkid Hub - Key System",
-    LoadingTitle = "C00lkid Hub",
-    LoadingSubtitle = "Enter Your Key",
-    ConfigurationSaving = {
-        Enabled = false
-    }
-})
-
-local KeyTab = KeyWindow:CreateTab("🔑 Key System", 4483362458)
-KeyTab:CreateInput({
-    Name = "Enter Key",
-    PlaceholderText = "Paste key here",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(input)
-        local keys = fetchKeys()
-        if not keys then
-            Rayfield:Notify({ Title = "Error", Content = "Failed to fetch keys!", Duration = 5 })
-            return
-        end
-        local role = checkKey(input, keys)
-        if role then
-            Rayfield:Notify({ Title = "Success", Content = "Key accepted! ("..role..")", Duration = 5 })
-            -- Save key
-            pcall(function()
-                if writefile then
-                    writefile("C00lkidHub_Key.txt", input)
-                end
-            end)
-            unlockHub(role)
-        else
-            Rayfield:Notify({ Title = "Invalid", Content = "Wrong or expired key!", Duration = 5 })
-        end
-    end
-})
+-- Here you can add your Tabs + Features below
+-- Example:
+-- local Window = Rayfield:CreateWindow({ Name = "C00lkid Main GUI" })
+-- local Tab = Window:CreateTab("Universal Scripts")
+-- Tab:CreateButton({ Name = "Fly", Callback = function() print("Fly pressed") end })
