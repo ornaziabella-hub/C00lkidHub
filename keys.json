@@ -1,6 +1,17 @@
 {
-  "OwnerKey": "Pro_99nightsforest",
-  "SpecialKey": "aliang elementary school",
-  "PublicKeys": ["Yourkeyis123"],
-  "ExpireDate": "2025-09-30"
+  "owner": ["Freekeybyowner"],
+  "special": ["WelcomeSpecialperson"],
+  "daily": [
+    "X9KQ2-A7LP3",
+    "J3MZ9-B6RT8",
+    "H2ND7-P5VQ1",
+    "C8LQ4-Z1XP6",
+    "R5TY2-M8JW9",
+    "W7PQ3-V6LK2",
+    "N1XZ5-K4HJ7",
+    "Y6DB8-Q2LM5",
+    "F9WT3-S7VK4",
+    "G2KP6-M9RQ8"
+  ],
+  "expires": "2025-09-30T00:00:00Z"
 }
