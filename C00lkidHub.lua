@@ -1,185 +1,201 @@
--- C00lkid Hub "made by enz0"
--- Uses Rayfield UI Library
+--// C00lkidHub.lua
+-- Made by enz0 (Pro_99nightsforest)
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- // SERVICES
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 
----------------------------------------------------------
--- Key System
----------------------------------------------------------
-local KeySettings = {
-    Title = "C00lkid Hub Key System",
-    Subtitle = "Made by enz0",
-    Note = "Enter your key to unlock the hub",
-    FileName = "C00lkidKey",
-    SaveKey = true,
-    GrabKeyFromSite = false,
-    Key = {"Freekeybyowner", "Public key"} -- owner + public
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- // KEY SYSTEM
+local Keys = {
+    Owner = "Freekeybyowner",
+    Special = "WelcomeSpecialperson",
+    Public = "Public key",
+    Normal = "Yourkeyis123"
 }
 
-local Window = Rayfield:CreateWindow({
-    Name = 'C00lkid "made by enz0"',
-    LoadingTitle = "C00lkid Hub",
-    LoadingSubtitle = "FE + TikTok Scripts",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = nil,
-        FileName = "C00lkidHub"
-    },
-    KeySystem = true,
-    KeySettings = KeySettings
-})
+local WrongAttempts = 0
+local MaxAttempts = 3
+local CooldownActive = false
+local CooldownTime = 300 -- 5 minutes
 
----------------------------------------------------------
--- Notifications
----------------------------------------------------------
-local function CoolNotify(title, content, duration)
-    Rayfield:Notify({
+-- // NOTIFICATION FUNCTION
+local function Notify(title, text, duration)
+    StarterGui:SetCore("SendNotification", {
         Title = title,
-        Content = content,
-        Duration = duration or 3
+        Text = text,
+        Duration = duration or 5
     })
 end
 
-CoolNotify("C00lkid Hub", "If you like the script, follow @krnl.scripts ❤️", 6)
+-- // BACKGROUND (Happy Cat Dancing)
+local bg = Instance.new("ScreenGui", PlayerGui)
+bg.Name = "HappyCatBG"
+bg.IgnoreGuiInset = true
+bg.ResetOnSpawn = false
+local img = Instance.new("ImageLabel", bg)
+img.Size = UDim2.new(1, 0, 1, 0)
+img.Position = UDim2.new(0, 0, 0, 0)
+img.Image = "rbxassetid://7083449163" -- cute dancing cat image
+img.ImageTransparency = 0.2
 
----------------------------------------------------------
--- Wrong Key Kick Troll
----------------------------------------------------------
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local lp = Players.LocalPlayer
-    if _G.RayfieldKey and not table.find(KeySettings.Key, _G.RayfieldKey) then
-        lp:Kick("🤡 L BOZO WRONG KEY 🤡")
+-- // KEY INPUT GUI
+local KeyGui = Instance.new("ScreenGui", PlayerGui)
+KeyGui.Name = "KeyGui"
+local Frame = Instance.new("Frame", KeyGui)
+Frame.Size = UDim2.new(0, 300, 0, 150)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+Frame.BorderSizePixel = 3
+
+local Box = Instance.new("TextBox", Frame)
+Box.Size = UDim2.new(0.8, 0, 0.3, 0)
+Box.Position = UDim2.new(0.1, 0, 0.2, 0)
+Box.PlaceholderText = "Enter Key..."
+
+local Btn = Instance.new("TextButton", Frame)
+Btn.Size = UDim2.new(0.5, 0, 0.3, 0)
+Btn.Position = UDim2.new(0.25, 0, 0.6, 0)
+Btn.Text = "Submit"
+
+local role = nil
+
+-- // KEY CHECK
+Btn.MouseButton1Click:Connect(function()
+    if CooldownActive then
+        Notify("Cooldown Active", "Wait for countdown to finish!", 5)
+        return
+    end
+
+    local input = Box.Text
+    if input == Keys.Owner then
+        -- Owner confirm question
+        if LocalPlayer.Name == "Pro_99nightsforest" then
+            role = "Owner"
+            Notify("Welcome Owner", "Welcome back, enz0 👑", 6)
+            KeyGui:Destroy()
+        else
+            Notify("Uh oh!", "Your Not Owner! Stop!", 5)
+        end
+
+    elseif input == Keys.Special then
+        -- Special confirm question
+        local answer = "aliang elementary school"
+        local Ask = Instance.new("TextBox", Frame)
+        Ask.Size = UDim2.new(0.8, 0, 0.3, 0)
+        Ask.Position = UDim2.new(0.1, 0, 0.55, 0)
+        Ask.PlaceholderText = "What’s enz0’s old school?"
+        Ask.FocusLost:Connect(function()
+            if string.lower(Ask.Text) == answer then
+                role = "Special"
+                Notify("Special Access", "Welcome Special Person 💎", 6)
+                KeyGui:Destroy()
+            else
+                Notify("Uh oh!", "Your Not Special Person! Stop!", 5)
+            end
+        end)
+
+    elseif input == Keys.Public then
+        role = "Public"
+        Notify("Welcome", "Welcome Public User 🔑", 6)
+        KeyGui:Destroy()
+
+    elseif input == Keys.Normal then
+        role = "Normal"
+        Notify("Welcome", "Welcome Normal User 😁", 6)
+        KeyGui:Destroy()
+
+    else
+        WrongAttempts += 1
+        if WrongAttempts >= MaxAttempts then
+            CooldownActive = true
+            local cd = CooldownTime
+            Notify("Too many wrong!", "Ha stop! You can't enter!", 5)
+            task.spawn(function()
+                while cd > 0 do
+                    Btn.Text = tostring(cd) .. "s"
+                    task.wait(1)
+                    cd -= 1
+                end
+                Btn.Text = "Submit"
+                WrongAttempts = 0
+                CooldownActive = false
+            end)
+        else
+            Notify("Wrong Key!", "Try again funny guy 🤡", 4)
+        end
     end
 end)
 
----------------------------------------------------------
--- Tabs
----------------------------------------------------------
--- Troll Hub
-local TrollTab = Window:CreateTab("🤡 Troll Hub", 4483362458)
-TrollTab:CreateButton({
-    Name = "Troll Script",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/jPj1D0qQ"))()
-        CoolNotify("Troll Hub", "Troll Script Loaded!", 3)
-    end
-})
+-- // MAIN HUB (Rayfield-like fake UI)
+local function LoadHub(role)
+    local Screen = Instance.new("ScreenGui", PlayerGui)
+    Screen.Name = "C00lkidHub"
 
--- FE Hub
-local FeTab = Window:CreateTab("⚡ FE Hub", 4483362458)
-FeTab:CreateButton({
-    Name = "Fly (FE)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/Y9jXmG6J"))()
-        CoolNotify("FE Hub", "Fly Loaded!", 3)
-    end
-})
-FeTab:CreateButton({
-    Name = "Noclip (FE)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/9fQx1wF7"))()
-        CoolNotify("FE Hub", "Noclip Loaded!", 3)
-    end
-})
-FeTab:CreateButton({
-    Name = "Speed (FE)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/B7nZ6Fsb"))()
-        CoolNotify("FE Hub", "Speed Loaded!", 3)
-    end
-})
-FeTab:CreateButton({
-    Name = "Jump (FE)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/4JbQdQyW"))()
-        CoolNotify("FE Hub", "Jump Loaded!", 3)
-    end
-})
+    local Main = Instance.new("Frame", Screen)
+    Main.Size = UDim2.new(0.4, 0, 0.5, 0)
+    Main.Position = UDim2.new(0.3, 0, 0.25, 0)
+    Main.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    Main.BorderSizePixel = 4
 
----------------------------------------------------------
--- TikTok FE Scripts Tab
----------------------------------------------------------
-local TikTokTab = Window:CreateTab("🎵 TikTok FE Scripts", 6035300000)
+    local Title = Instance.new("TextLabel", Main)
+    Title.Size = UDim2.new(1, 0, 0.1, 0)
+    Title.Text = 'C00lkid "made by enz0"'
+    Title.TextScaled = true
+    Title.BackgroundTransparency = 1
 
--- Load ALL
-TikTokTab:CreateButton({
-    Name = "🚀 Load ALL TikTok FE Scripts",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/06iG6YkU"))() -- Fullbright
-        loadstring(game:HttpGet("https://pastebin.com/raw/Y9jXmG6J"))() -- Fly
-        loadstring(game:HttpGet("https://pastebin.com/raw/9fQx1wF7"))() -- Noclip
-        loadstring(game:HttpGet("https://pastebin.com/raw/B7nZ6Fsb"))() -- Speed
-        loadstring(game:HttpGet("https://pastebin.com/raw/4JbQdQyW"))() -- Jump
-        loadstring(game:HttpGet("https://pastebin.com/raw/QLQxk6ki"))() -- Touch Kill
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Sxelent/Script-Pack/main/FE%20BEST%20HAT%20FLING%20SCRIPT.lua"))() -- Fling
-        loadstring(game:HttpGet("https://pastebin.com/raw/eCpipCTH"))() -- Emotes
-        loadstring(game:HttpGet("https://pastebin.com/raw/0WDhhGd1"))() -- Telekinesis
-        CoolNotify("TikTok FE", "🎵 TikTok Mode Activated 🚀", 6)
+    -- Example Tabs
+    local function MakeButton(name, y, callback)
+        local Btn = Instance.new("TextButton", Main)
+        Btn.Size = UDim2.new(0.8, 0, 0.1, 0)
+        Btn.Position = UDim2.new(0.1, 0, y, 0)
+        Btn.Text = name
+        Btn.MouseButton1Click:Connect(callback)
     end
-})
 
--- Individual buttons
-TikTokTab:CreateButton({
-    Name = "Fullbright (Local ❌)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/06iG6YkU"))()
-        CoolNotify("TikTok FE", "Loaded Fullbright", 3)
+    -- Universal
+    MakeButton("Universal: Fly", 0.2, function()
+        Notify("Fly", "You are flying ✈️", 5)
+    end)
+    MakeButton("Universal: Noclip", 0.32, function()
+        Notify("Noclip", "Walls are fake now 🚪", 5)
+    end)
+
+    -- Owner tab
+    if role == "Owner" then
+        MakeButton("Owner: Kick All", 0.44, function()
+            Notify("LOL", "enz0 just kicked everyone 🤡", 6)
+        end)
+        MakeButton("Owner: Rainbow Skin", 0.56, function()
+            Notify("Wow", "enz0 turned rainbow 🌈", 6)
+        end)
     end
-})
-TikTokTab:CreateButton({
-    Name = "FE Fly (Local ❌)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/Y9jXmG6J"))()
-        CoolNotify("TikTok FE", "Loaded Fly", 3)
+
+    -- Special tab
+    if role == "Special" then
+        MakeButton("Special: Sparkly Mode", 0.44, function()
+            Notify("Shiny", "You’re sparkly now ✨", 6)
+        end)
     end
-})
-TikTokTab:CreateButton({
-    Name = "FE Noclip (Local ❌)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/9fQx1wF7"))()
-        CoolNotify("TikTok FE", "Loaded Noclip", 3)
+
+    -- Normal prank tab
+    if role == "Normal" or role == "Public" then
+        MakeButton("Prank: Sound", 0.68, function()
+            local Sound = Instance.new("Sound", workspace)
+            Sound.SoundId = "rbxassetid://9129369274" -- funny sound
+            Sound:Play()
+            Notify("Prank", "Funny sound played 😂", 5)
+        end)
     end
-})
-TikTokTab:CreateButton({
-    Name = "FE Speed (Local ❌)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/B7nZ6Fsb"))()
-        CoolNotify("TikTok FE", "Loaded Speed", 3)
+end
+
+-- // LOAD HUB after key
+task.spawn(function()
+    while not role do
+        task.wait(0.5)
     end
-})
-TikTokTab:CreateButton({
-    Name = "FE Jump (Local ❌)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/4JbQdQyW"))()
-        CoolNotify("TikTok FE", "Loaded Jump", 3)
-    end
-})
-TikTokTab:CreateButton({
-    Name = "FE Touch Kill (FE ✅)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/QLQxk6ki"))()
-        CoolNotify("TikTok FE", "Loaded Touch Kill", 3)
-    end
-})
-TikTokTab:CreateButton({
-    Name = "FE Fling (FE ✅)",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Sxelent/Script-Pack/main/FE%20BEST%20HAT%20FLING%20SCRIPT.lua"))()
-        CoolNotify("TikTok FE", "Loaded Fling", 3)
-    end
-})
-TikTokTab:CreateButton({
-    Name = "FE Emotes (FE ✅)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/eCpipCTH"))()
-        CoolNotify("TikTok FE", "Loaded Emotes", 3)
-    end
-})
-TikTokTab:CreateButton({
-    Name = "FE Telekinesis (FE ✅)",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/0WDhhGd1"))()
-        CoolNotify("TikTok FE", "Loaded Telekinesis", 3)
-    end
-})
+    LoadHub(role)
+end)
