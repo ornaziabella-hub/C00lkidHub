@@ -1,201 +1,168 @@
 --// C00lkidHub.lua
 -- Made by enz0 (Pro_99nightsforest)
 
--- // SERVICES
+--// Services
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- // KEY SYSTEM
-local Keys = {
-    Owner = "Freekeybyowner",
-    Special = "WelcomeSpecialperson",
-    Public = "Public key",
-    Normal = "Yourkeyis123"
-}
+--// Rayfield Loader
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+--// Key System Config
+local OwnerKey = "Freekeybyowner"
+local SpecialKey = "WelcomeSpecialperson"
+local PublicKey = "Public key"
+local OtherKey = "Yourkeyis123"
 
 local WrongAttempts = 0
-local MaxAttempts = 3
-local CooldownActive = false
-local CooldownTime = 300 -- 5 minutes
+local MaxWrong = 5
+local AccessLevel = nil
 
--- // NOTIFICATION FUNCTION
-local function Notify(title, text, duration)
-    StarterGui:SetCore("SendNotification", {
+--// Helper: Funny Rejects
+local FunnyRejects = {
+    "LOL nope 💀",
+    "Bro really tried 💀",
+    "❌ Wrong key, goofy",
+    "😂 Not even close",
+    "🚪 Door is locked fam",
+    "Skill issue 💀",
+    "Bruh moment 🤡"
+}
+local function FunnyReject()
+    return FunnyRejects[math.random(1, #FunnyRejects)]
+end
+
+--// Helper: Kick Player with funny message
+local KickMessages = {
+    "💀 TOO MANY WRONG KEYS!! GET OUT 🚪💨",
+    "🤣 You got cooked, kicked for spam",
+    "😂 Game over, no entry for clowns",
+    "❌ Instant kick, better luck never"
+}
+local function KickPlayer()
+    LocalPlayer:Kick(KickMessages[math.random(1, #KickMessages)])
+end
+
+--// Notifications
+local function Notify(title, content, time)
+    Rayfield:Notify({
         Title = title,
-        Text = text,
-        Duration = duration or 5
+        Content = content,
+        Duration = time or 6,
+        Image = 4483362458
     })
 end
 
--- // BACKGROUND (Happy Cat Dancing)
-local bg = Instance.new("ScreenGui", PlayerGui)
-bg.Name = "HappyCatBG"
-bg.IgnoreGuiInset = true
-bg.ResetOnSpawn = false
-local img = Instance.new("ImageLabel", bg)
-img.Size = UDim2.new(1, 0, 1, 0)
-img.Position = UDim2.new(0, 0, 0, 0)
-img.Image = "rbxassetid://7083449163" -- cute dancing cat image
-img.ImageTransparency = 0.2
+--// GUI
+local Window = Rayfield:CreateWindow({
+    Name = 'C00lkid "made by enz0"',
+    LoadingTitle = "C00lkidHub",
+    LoadingSubtitle = "by enz0",
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+    Discord = {
+        Enabled = false,
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "C00lkidHub Key System",
+        Subtitle = "Enter the correct key!",
+        Note = "Keys: Owner, Special, Public, or Other",
+        FileName = "C00lkidKey",
+        SaveKey = false,
+        GrabKeyFromSite = false,
+        Key = {OwnerKey, SpecialKey, PublicKey, OtherKey}
+    }
+})
 
--- // KEY INPUT GUI
-local KeyGui = Instance.new("ScreenGui", PlayerGui)
-KeyGui.Name = "KeyGui"
-local Frame = Instance.new("Frame", KeyGui)
-Frame.Size = UDim2.new(0, 300, 0, 150)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
-Frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-Frame.BorderSizePixel = 3
-
-local Box = Instance.new("TextBox", Frame)
-Box.Size = UDim2.new(0.8, 0, 0.3, 0)
-Box.Position = UDim2.new(0.1, 0, 0.2, 0)
-Box.PlaceholderText = "Enter Key..."
-
-local Btn = Instance.new("TextButton", Frame)
-Btn.Size = UDim2.new(0.5, 0, 0.3, 0)
-Btn.Position = UDim2.new(0.25, 0, 0.6, 0)
-Btn.Text = "Submit"
-
-local role = nil
-
--- // KEY CHECK
-Btn.MouseButton1Click:Connect(function()
-    if CooldownActive then
-        Notify("Cooldown Active", "Wait for countdown to finish!", 5)
-        return
-    end
-
-    local input = Box.Text
-    if input == Keys.Owner then
-        -- Owner confirm question
-        if LocalPlayer.Name == "Pro_99nightsforest" then
-            role = "Owner"
-            Notify("Welcome Owner", "Welcome back, enz0 👑", 6)
-            KeyGui:Destroy()
-        else
-            Notify("Uh oh!", "Your Not Owner! Stop!", 5)
-        end
-
-    elseif input == Keys.Special then
-        -- Special confirm question
-        local answer = "aliang elementary school"
-        local Ask = Instance.new("TextBox", Frame)
-        Ask.Size = UDim2.new(0.8, 0, 0.3, 0)
-        Ask.Position = UDim2.new(0.1, 0, 0.55, 0)
-        Ask.PlaceholderText = "What’s enz0’s old school?"
-        Ask.FocusLost:Connect(function()
-            if string.lower(Ask.Text) == answer then
-                role = "Special"
-                Notify("Special Access", "Welcome Special Person 💎", 6)
-                KeyGui:Destroy()
-            else
-                Notify("Uh oh!", "Your Not Special Person! Stop!", 5)
-            end
-        end)
-
-    elseif input == Keys.Public then
-        role = "Public"
-        Notify("Welcome", "Welcome Public User 🔑", 6)
-        KeyGui:Destroy()
-
-    elseif input == Keys.Normal then
-        role = "Normal"
-        Notify("Welcome", "Welcome Normal User 😁", 6)
-        KeyGui:Destroy()
-
-    else
-        WrongAttempts += 1
-        if WrongAttempts >= MaxAttempts then
-            CooldownActive = true
-            local cd = CooldownTime
-            Notify("Too many wrong!", "Ha stop! You can't enter!", 5)
-            task.spawn(function()
-                while cd > 0 do
-                    Btn.Text = tostring(cd) .. "s"
-                    task.wait(1)
-                    cd -= 1
-                end
-                Btn.Text = "Submit"
-                WrongAttempts = 0
-                CooldownActive = false
-            end)
-        else
-            Notify("Wrong Key!", "Try again funny guy 🤡", 4)
-        end
+--// Key System Logic
+Rayfield:OnKeyEntered(function(Key)
+    if Key == OwnerKey then
+        AccessLevel = "Owner"
+        print("[C00lkidHub] OWNER KEY used by: " .. LocalPlayer.Name)
+        Notify("✅ Owner Access", "Welcome back, enz0!", 8)
+    elseif Key == SpecialKey then
+        AccessLevel = "Special"
+        print("[C00lkidHub] SPECIAL KEY used by: " .. LocalPlayer.Name)
+        Notify("💎 Special Access", "Welcome, special friend!", 8)
+    elseif Key == PublicKey then
+        AccessLevel = "Public"
+        print("[C00lkidHub] PUBLIC KEY used by: " .. LocalPlayer.Name)
+        Notify("🌍 Public Access", "Enjoy the hub!", 8)
+    elseif Key == OtherKey then
+        AccessLevel = "Other"
+        print("[C00lkidHub] OTHER KEY used by: " .. LocalPlayer.Name)
+        Notify("🔑 Access", "Valid universal key!", 8)
     end
 end)
 
--- // MAIN HUB (Rayfield-like fake UI)
-local function LoadHub(role)
-    local Screen = Instance.new("ScreenGui", PlayerGui)
-    Screen.Name = "C00lkidHub"
+Rayfield:OnKeyNotFound(function()
+    WrongAttempts = WrongAttempts + 1
+    local left = MaxWrong - WrongAttempts
 
-    local Main = Instance.new("Frame", Screen)
-    Main.Size = UDim2.new(0.4, 0, 0.5, 0)
-    Main.Position = UDim2.new(0.3, 0, 0.25, 0)
-    Main.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    Main.BorderSizePixel = 4
+    Notify("WRONG!", FunnyReject() .. " (" .. WrongAttempts .. "/" .. MaxWrong .. ")", 5)
+    warn("[C00lkidHub] Player " .. LocalPlayer.Name .. " wrong key (" .. WrongAttempts .. "/" .. MaxWrong .. ")")
 
-    local Title = Instance.new("TextLabel", Main)
-    Title.Size = UDim2.new(1, 0, 0.1, 0)
-    Title.Text = 'C00lkid "made by enz0"'
-    Title.TextScaled = true
-    Title.BackgroundTransparency = 1
-
-    -- Example Tabs
-    local function MakeButton(name, y, callback)
-        local Btn = Instance.new("TextButton", Main)
-        Btn.Size = UDim2.new(0.8, 0, 0.1, 0)
-        Btn.Position = UDim2.new(0.1, 0, y, 0)
-        Btn.Text = name
-        Btn.MouseButton1Click:Connect(callback)
+    if WrongAttempts >= MaxWrong then
+        KickPlayer()
+    elseif left == 1 then
+        Notify("⚠️ Warning!", "Next wrong = instant kick 💀", 6)
     end
-
-    -- Universal
-    MakeButton("Universal: Fly", 0.2, function()
-        Notify("Fly", "You are flying ✈️", 5)
-    end)
-    MakeButton("Universal: Noclip", 0.32, function()
-        Notify("Noclip", "Walls are fake now 🚪", 5)
-    end)
-
-    -- Owner tab
-    if role == "Owner" then
-        MakeButton("Owner: Kick All", 0.44, function()
-            Notify("LOL", "enz0 just kicked everyone 🤡", 6)
-        end)
-        MakeButton("Owner: Rainbow Skin", 0.56, function()
-            Notify("Wow", "enz0 turned rainbow 🌈", 6)
-        end)
-    end
-
-    -- Special tab
-    if role == "Special" then
-        MakeButton("Special: Sparkly Mode", 0.44, function()
-            Notify("Shiny", "You’re sparkly now ✨", 6)
-        end)
-    end
-
-    -- Normal prank tab
-    if role == "Normal" or role == "Public" then
-        MakeButton("Prank: Sound", 0.68, function()
-            local Sound = Instance.new("Sound", workspace)
-            Sound.SoundId = "rbxassetid://9129369274" -- funny sound
-            Sound:Play()
-            Notify("Prank", "Funny sound played 😂", 5)
-        end)
-    end
-end
-
--- // LOAD HUB after key
-task.spawn(function()
-    while not role do
-        task.wait(0.5)
-    end
-    LoadHub(role)
 end)
+
+--// Tabs
+local PublicTab = Window:CreateTab("Public Scripts 🌍", 4483362458)
+local SpecialTab = Window:CreateTab("Special 💎", 4483362458)
+local OwnerTab = Window:CreateTab("Owner 👑", 4483362458)
+local FunTab = Window:CreateTab("C00lkid Buttons 🤡", 4483362458)
+local PowerTab = Window:CreateTab("Powerful ⚡", 4483362458)
+local AngryTab = Window:CreateTab("Angry 😡", 4483362458)
+
+-- Public Tab Example
+PublicTab:CreateButton({
+    Name = "Fly (FE?)",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/YOURFLYSCRIPT"))()
+    end,
+})
+
+-- Special Tab Example
+SpecialTab:CreateParagraph({Title = "Special Menu", Content = "Welcome, special friend from aliang elementary school 😼"})
+
+-- Owner Tab Example
+OwnerTab:CreateParagraph({Title = "Owner Menu", Content = "Welcome back, Pro_99nightsforest aka enz0!"})
+OwnerTab:CreateButton({
+    Name = "Destroy Hub",
+    Callback = function()
+        game:GetService("CoreGui").Rayfield:Destroy()
+    end,
+})
+
+-- Funny Tab
+FunTab:CreateButton({
+    Name = "FE Sound Spam",
+    Callback = function()
+        local sound = Instance.new("Sound", workspace)
+        sound.SoundId = "rbxassetid://6534947240"
+        sound.Looped = true
+        sound:Play()
+    end,
+})
+
+-- Powerful Tab Example
+PowerTab:CreateButton({
+    Name = "Super Speed",
+    Callback = function()
+        LocalPlayer.Character.Humanoid.WalkSpeed = 100
+    end,
+})
+PowerTab:CreateButton({
+    Name = "Super Jump",
+    Callback = function()
+        LocalPlayer.Character.Humanoid.JumpPower = 200
+    end,
+})
+
+-- Angry Tab
+AngryTab:CreateParagraph({Title = "GRRRR 😡", Content = "This tab is just angry lol"})
